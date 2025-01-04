@@ -6,6 +6,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "node src/index.js",
+    "start": "node src/index.js",
     "test": "mocha --timeout 5000",
     "lint": "eslint .",
     "stylecheck": "prettier --check ."
