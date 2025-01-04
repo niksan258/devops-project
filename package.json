@@ -7,8 +7,8 @@
   "scripts": {
     "dev": "node src/index.js",
     "test": "mocha --timeout 5000",
-    "lint": "eslint . --fix",
-    "format": "prettier --write ."
+    "lint": "eslint .",
+    "stylecheck": "prettier --check ."
   },
   "repository": {
     "type": "git",
