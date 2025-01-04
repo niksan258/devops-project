@@ -32,7 +32,6 @@ jobs:
 
   codeql:
     name: Static code analysis
-    needs: codequality
     permissions:
       security-events: write
     runs-on: ubuntu-latest
