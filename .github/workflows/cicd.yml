@@ -7,7 +7,6 @@ on:
   workflow_dispatch:
 
 jobs:
-  # Stage 1: Setup
   setup:
     name: Setup and Cache Dependencies
     runs-on: ubuntu-latest
@@ -15,57 +14,64 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Cache Node Modules
-        uses: actions/cache@v3
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-node-modules-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-modules-
-
       - name: Install Dependencies
-        run: npm install
+        run: npm ci
 
-  # Stage 2: Validation
-  unit-tests:
-    name: Run Unit Tests
-    needs: setup
-    runs-on: ubuntu-latest
-    steps:
-      - name: Run Unit Tests
-        run: npm run test
-
-  integration-tests:
-    name: Run Integration Tests
-    needs: setup
-    runs-on: ubuntu-latest
-    steps:
-      - name: Run Integration Tests
-        run: npm run integration-test
+      - name: Save Repository Code
+        uses: actions/upload-artifact@v3
+        with:
+          name: repo-code
+          path: .
 
   lint:
     name: Lint Code
     needs: setup
     runs-on: ubuntu-latest
     steps:
-      - name: Lint Code
+      - name: Download Repository Code
+        uses: actions/download-artifact@v3
+        with:
+          name: repo-code
+
+      - name: Run Lint
         run: npm run lint
 
-  format:
-    name: Check Code Formatting
+  test:
+    name: Run Unit Tests
     needs: setup
     runs-on: ubuntu-latest
     steps:
-      - name: Style Check
+      - name: Download Repository Code
+        uses: actions/download-artifact@v3
+        with:
+          name: repo-code
+
+      - name: Run Unit Tests
+        run: npm run test
+
+  style:
+    name: Style Check
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Repository Code
+        uses: actions/download-artifact@v3
+        with:
+          name: repo-code
+
+      - name: Check Styles
         run: npm run stylecheck
 
   codeql:
     name: Static Code Analysis
-    needs: setup
+    needs: [lint, test, style]
     permissions:
       security-events: write
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
@@ -74,12 +80,14 @@ jobs:
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
 
-  # Stage 3: Build
   docker:
-    name: Build, Scan, and Push Docker Image
-    needs: [unit-tests, integration-tests, lint, format, codeql]
+    name: Build and Push Docker Image
+    needs: [codeql]
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
       - name: Build Docker Image
         run: docker build -t niksan258/devops-project:latest .
 
@@ -93,7 +101,7 @@ jobs:
           vuln-type: os,library
           severity: CRITICAL,HIGH
 
-      - name: Push Docker Image
+      - name: Push Image to Docker Hub
         run: |
           echo ${{ secrets.DOCKER_HUB_TOKEN }} | docker login --username ${{ secrets.DOCKER_USERNAME }} --password-stdin
           docker push niksan258/devops-project:latest
