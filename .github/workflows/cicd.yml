@@ -53,7 +53,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Build Docker Image
-        run: docker build -t devops-project:latest .
+        run: docker build -t niksan258/devops-project:latest .
 
       - name: Push Image to Docker Hub
         run: |
