@@ -7,8 +7,8 @@ app.get("/", (req, res) => {
   res.send("DevOps is awesome!");
 });
 
-app.listen(port, () => {
+const server = app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
 });
 
-export default app;
+export { app, server };
