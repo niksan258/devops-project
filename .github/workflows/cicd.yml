@@ -19,3 +19,12 @@ jobs:
 
     - name: Install Dependencies
       run: npm install
+
+    - name: Run Unit Tests
+      run: npm test
+
+    - name: Lint Code
+      run: npx eslint .
+
+    - name: Style Check
+      run: npx prettier --check .
