@@ -1,12 +1,14 @@
-const express = require('express');
+import express from "express";
+
 const app = express();
+const port = 3000;
 
-app.get('/', (req, res) => {
-    res.send('DevOps is awesome!');
+app.get("/", (req, res) => {
+  res.send("DevOps is awesome!");
 });
 
-const PORT = process.env.PORT || 3000;
-
-app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
+app.listen(port, () => {
+  console.log(`Server running at http://localhost:${port}`);
 });
+
+export default app;
