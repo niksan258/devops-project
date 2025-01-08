@@ -116,9 +116,9 @@ jobs:
             docker push niksan258/devops-project:latest
 
         - name: Deploy Image to Render
-        uses: gh-actions-workflows/deploy-docker-render@v1.1
-        with:
-          deploy-hook: ${{ secrets.RENDER_WEBHOOK }}
-          image-url: niksan258/devops-project:latest
-          render-api-key: ${{ secrets.RENDER_API_KEY }}
-          wait-for-deployment: true
+          uses: gh-actions-workflows/deploy-docker-render@v1.1
+          with:
+            deploy-hook: ${{ secrets.RENDER_WEBHOOK }}
+            image-url: niksan258/devops-project:latest
+            render-api-key: ${{ secrets.RENDER_API_KEY }}
+            wait-for-deployment: true
