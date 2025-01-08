@@ -17,11 +17,13 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
-      - name: Save Repository Code
+      - name: Save Repository Code (Exclude node_modules)
         uses: actions/upload-artifact@v4
         with:
           name: repo-code
           path: .
+          exclude: |
+            **/node_modules/**
 
   lint:
     name: Lint Code
@@ -89,9 +91,9 @@ jobs:
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
 
-  docker:
-    name: Build and Push Docker Image
-    needs: [codeql]
+  build-docker:
+    name: Build Docker Image
+    needs: codeql
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -99,6 +101,26 @@ jobs:
 
       - name: Build Docker Image
         run: docker build -t niksan258/devops-project:latest .
+
+      - name: Save Docker Image
+        run: docker save niksan258/devops-project:latest | gzip > devops-project.tar.gz
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-image
+          path: devops-project.tar.gz
+
+  scan-docker:
+    name: Scan Docker Image
+    needs: build-docker
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Docker Image
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-image
+
+      - name: Load Docker Image
+        run: gunzip -c devops-project.tar.gz | docker load
 
       - name: Run Trivy Vulnerability Scanner
         uses: aquasecurity/trivy-action@0.28.0
@@ -110,11 +132,29 @@ jobs:
           vuln-type: os,library
           severity: CRITICAL,HIGH
 
+  upload-docker:
+    name: Upload Docker Image
+    needs: scan-docker
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Docker Image
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-image
+
+      - name: Load Docker Image
+        run: gunzip -c devops-project.tar.gz | docker load
+
       - name: Push Image to Docker Hub
         run: |
           echo ${{ secrets.DOCKER_HUB_TOKEN }} | docker login --username ${{ secrets.DOCKER_USERNAME }} --password-stdin
           docker push niksan258/devops-project:latest
 
+  deploy-docker:
+    name: Deploy Docker Image
+    needs: upload-docker
+    runs-on: ubuntu-latest
+    steps:
       - name: Deploy Image to Render
         uses: gh-actions-workflows/deploy-docker-render@v1.1
         with:
