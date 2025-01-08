@@ -102,8 +102,10 @@ jobs:
       - name: Build Docker Image
         run: docker build -t niksan258/devops-project:latest .
 
-      - name: Save Docker Image
+      - name: Archive Docker Image
         run: docker save niksan258/devops-project:latest | gzip > devops-project.tar.gz
+
+      - name: Upload Docker Image Artifact
         uses: actions/upload-artifact@v4
         with:
           name: docker-image
