@@ -1,5 +1,1 @@
-<<<<<<< HEAD
-Some info..
-=======
-Some info...
->>>>>>> f2a6180f8acdfe493a4a0141f812d84b7b4fe845
+Some info....
