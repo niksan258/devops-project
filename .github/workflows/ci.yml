@@ -1,0 +1,11 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches:
+      - dev
+  workflow_dispatch:
+
+jobs:
+  ci:
+    uses: .github/workflows/templates/ci-template.yml
