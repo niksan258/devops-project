@@ -2,6 +2,10 @@ name: CI Template
 
 on:
   workflow_call:
+    inputs:
+      branch:
+        required: true
+        type: string
 
 jobs:
   setup:
@@ -64,3 +68,21 @@ jobs:
 
       - name: Check Styles
         run: npm run stylecheck
+
+  codeql:
+    name: Static Code Analysis with CodeQL
+    needs: [lint, test, style]
+    permissions:
+      security-events: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
