@@ -1,0 +1,14 @@
+name: CI Pipeline
+
+on:
+  pull-request:
+    branches:
+      - dev
+      - main
+  workflow_dispatch:
+
+jobs:
+  ci:
+    permissions:
+      security-events: write
+    uses: ./.github/workflows/ci-template.yml

@@ -1,61 +1,87 @@
 name: CI/CD Pipeline
 
 on:
-  pull_request:
+  push:
     branches:
       - main
   workflow_dispatch:
 
 jobs:
-  code-quality:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: "latest"
-
-      - name: Install Dependencies
-        run: npm install
-
-      - name: Run Unit Tests
-        run: npm run test
-
-      - name: Lint Code
-        run: npm run lint
-
-      - name: Style Check
-        run: npm run stylecheck
-
-  codeql:
-    name: Static code analysis
+  ci:
     permissions:
       security-events: write
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
-        with:
-          languages: javascript
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+    uses: ./.github/workflows/ci-template.yml
 
-  docker:
-    needs: code-quality
+  build-docker:
+    name: Build Docker Image
+    needs: ci
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
 
       - name: Build Docker Image
-        run: docker build -t devops-project:latest .
+        run: docker build -t niksan258/devops-project:latest .
+
+      - name: Archive Docker Image
+        run: docker save niksan258/devops-project:latest | gzip > devops-project.tar.gz
+
+      - name: Upload Docker Image Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-image
+          path: devops-project.tar.gz
+
+  scan-docker:
+    name: Scan Docker Image
+    needs: build-docker
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Docker Image
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-image
+
+      - name: Load Docker Image
+        run: gunzip -c devops-project.tar.gz | docker load
+
+      - name: Run Trivy Vulnerability Scanner
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: niksan258/devops-project:latest
+          format: table
+          exit-code: 1
+          ignore-unfixed: true
+          vuln-type: os,library
+          severity: CRITICAL,HIGH
+
+  upload-docker:
+    name: Upload Docker Image
+    needs: scan-docker
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Docker Image
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-image
+
+      - name: Load Docker Image
+        run: gunzip -c devops-project.tar.gz | docker load
 
       - name: Push Image to Docker Hub
         run: |
-          docker login -u niksan258 -p ${{ secrets.DOCKER_HUB_TOKEN }}
+          echo ${{ secrets.DOCKER_HUB_TOKEN }} | docker login --username ${{ secrets.DOCKER_USERNAME }} --password-stdin
           docker push niksan258/devops-project:latest
+
+  deploy-docker:
+    name: Deploy Docker Image
+    needs: upload-docker
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy Image to Render
+        uses: gh-actions-workflows/deploy-docker-render@v1.1
+        with:
+          deploy-hook: ${{ secrets.RENDER_WEBHOOK }}
+          image-url: niksan258/devops-project:latest
+          render-api-key: ${{ secrets.RENDER_API_KEY }}
+          wait-for-deployment: true
