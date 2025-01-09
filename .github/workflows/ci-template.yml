@@ -15,6 +15,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: repo-code
+          include-hidden-files: true
           path: .
 
   lint:
