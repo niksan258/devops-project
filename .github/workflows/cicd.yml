@@ -8,9 +8,7 @@ on:
 
 jobs:
   ci:
-    uses: ./.github/workflows/ci-template.yml@main
-    with:
-      branch: ${{ github.ref }}
+    uses: .github/workflows/ci-template.yml
 
   build-docker:
     name: Build Docker Image

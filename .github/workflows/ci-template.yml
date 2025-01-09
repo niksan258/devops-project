@@ -2,10 +2,6 @@ name: CI Template
 
 on:
   workflow_call:
-    inputs:
-      branch:
-        required: true
-        type: string
 
 jobs:
   setup:
