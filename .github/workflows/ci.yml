@@ -8,4 +8,6 @@ on:
 
 jobs:
   ci:
+    permissions:
+    security-events: write
     uses: ./.github/workflows/ci-template.yml
